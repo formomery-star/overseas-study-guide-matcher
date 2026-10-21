@@ -119,6 +119,26 @@ def stage(proposal, approval, base, out):
     return manifest
 
 
+def verify_release(directory):
+    """Integrity check only; manifest must come from a trusted maintainer channel."""
+    directory = Path(directory)
+    manifest = read(directory/'manifest.json')
+    expected = {'programs.json', 'evidence.json', 'review.json', 'diff.json'}
+    require(manifest.get('status') == 'staged_not_deployed', '不支持的版本状态')
+    require(isinstance(manifest.get('files'), dict) and set(manifest['files']) == expected,
+            '版本清单文件集合不符')
+    require({p.name for p in directory.iterdir()} == expected | {'manifest.json'}, '版本文件缺失或存在额外文件')
+    require(not directory.is_symlink(), '版本目录不能是符号链接')
+    for name, wanted in manifest['files'].items():
+        p = directory/name
+        require(p.is_file() and not p.is_symlink(), '版本文件类型不符')
+        require(hashlib.sha256(p.read_bytes()).hexdigest() == wanted, '版本文件哈希不符：' + name)
+    approval = read(directory/'review.json')
+    require(approval.get('decision') == 'approved' and
+            approval.get('proposal_sha256') == manifest.get('proposal_sha256'), '审核记录与版本不一致')
+    return {'status':'integrity_verified_not_deployed', 'proposal_sha256':manifest['proposal_sha256']}
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__)
     sub = ap.add_subparsers(dest='cmd', required=True)
@@ -126,7 +146,10 @@ def main():
     h = sub.add_parser('hash-field'); h.add_argument('programs'); h.add_argument('program_id'); h.add_argument('field')
     r = sub.add_parser('review'); r.add_argument('proposal'); r.add_argument('--reviewer', required=True); r.add_argument('--note', required=True); r.add_argument('--out', required=True)
     s = sub.add_parser('stage'); s.add_argument('proposal'); s.add_argument('--approval', required=True); s.add_argument('--base', required=True); s.add_argument('--out', required=True)
+    check = sub.add_parser('verify-release'); check.add_argument('directory')
     a = ap.parse_args()
+    if a.cmd == 'verify-release':
+        print(json.dumps(verify_release(a.directory), ensure_ascii=False)); return
     if a.cmd == 'hash-field':
         p = next(p for p in read(a.programs) if p['id'] == a.program_id)
         print(digest(p.get('facts', {}).get(a.field))); return
