@@ -18,6 +18,8 @@ python scripts/community_data.py stage contributions/FILE.json --approval /priva
 
 stage核对旧值hash和审核时的提交hash，不改基础库；新版本含programs/evidence、前后差异、审核和SHA256清单。已有目录拒绝覆盖。新版本仍是staged_not_deployed，不能据此宣布已上线。
 
+传输前后执行 `python scripts/community_data.py verify-release /private/releases/v1`，核验文件集合、文件hash及审核绑定；篡改、缺失、额外文件和清单路径越界均拒绝。清单须由受信任维护者渠道获取：这是传输完整性校验，不是签名认证，也不替代生产回归。
+
 ## 同步服务器的验收顺序
 
 1. 在完整数据库的隔离副本中替换两个暂存文件，保留taxonomy、学校库等关联资料；运行已有数据库校验器。
