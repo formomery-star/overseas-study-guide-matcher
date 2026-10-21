@@ -62,5 +62,29 @@ class ContributionTests(unittest.TestCase):
             unknown=sample(); unknown['changes'][0]['program_id']='unknown'
             with self.assertRaises(ValueError): c.stage(unknown,c.review(unknown,'test','test'),base,root/'v4')
 
+    def test_release_integrity(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp); base=root/'base'; base.mkdir()
+            c.write_new(base/'programs.json',[{'id':'synthetic-cs-2027','facts':{}}])
+            c.write_new(base/'evidence.json',[])
+            p=sample(); c.stage(p,c.review(p,'test','fixture only'),base,root/'v1')
+            release=root/'v1'
+            self.assertEqual(c.verify_release(release)['status'],'integrity_verified_not_deployed')
+            original=(release/'programs.json').read_bytes()
+            (release/'programs.json').write_text('[]',encoding='utf-8')
+            with self.assertRaises(ValueError): c.verify_release(release)
+            (release/'programs.json').write_bytes(original)
+            (release/'extra.txt').write_text('unexpected')
+            with self.assertRaises(ValueError): c.verify_release(release)
+            (release/'extra.txt').unlink()
+            (release/'diff.json').unlink()
+            with self.assertRaises(ValueError): c.verify_release(release)
+
+    def test_manifest_cannot_reference_outside_directory(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp)
+            c.write_new(root/'manifest.json',{'status':'staged_not_deployed','files':{'../secret': 'abc'}})
+            with self.assertRaises(ValueError): c.verify_release(root)
+
 
 if __name__ == '__main__': unittest.main()
