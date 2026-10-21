@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "contribution_id": "synthetic-example",
+  "license": "CC0-1.0",
+  "changes": [
+    {
+      "program_id": "synthetic-cs-2027",
+      "field": "duration_years",
+      "expected_sha256": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b",
+      "value": 4,
+      "scope": "Synthetic only; not a university fact",
+      "evidence": {
+        "id": "synthetic-evidence",
+        "url": "https://example.org/program",
+        "publisher": "Synthetic University",
+        "source_type": "university_official",
+        "checked_on": "2026-10-21",
+        "data_period": "2027 synthetic",
+        "scope": "synthetic",
+        "summary": "Fixture only; not verified real information"
+      }
+    }
+  ]
+}
