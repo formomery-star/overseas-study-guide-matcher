@@ -19,6 +19,20 @@ def sample():
 
 
 class ContributionTests(unittest.TestCase):
+    def test_field_identifier_wrong_types_are_readable_errors(self):
+        for value in ([], {}, None, True, 7):
+            with self.subTest(value=value):
+                p=sample(); p['changes'][0]['field']=value
+                with self.assertRaisesRegex(ValueError, '不支持该字段'): c.validate(p)
+
+    def test_official_name_requires_nonblank_text(self):
+        for value in ({'unexpected':'object'}, ['name'], 123, True, '   '):
+            with self.subTest(value=value):
+                p=sample(); p['changes'][0].update(field='official_name',value=value)
+                with self.assertRaisesRegex(ValueError, '专业名称必须为非空文本'): c.validate(p)
+        p=sample(); p['changes'][0].update(field='official_name',value='Synthetic degree')
+        self.assertEqual(c.validate(p)['status'], 'awaiting_review')
+
     def test_valid_submission_is_not_approved(self):
         self.assertEqual(c.validate(sample())['status'], 'awaiting_review')
 
@@ -88,3 +102,4 @@ class ContributionTests(unittest.TestCase):
 
 
 if __name__ == '__main__': unittest.main()
+
