@@ -46,13 +46,15 @@ def validate(proposal):
     for c in changes:
         require(isinstance(c, dict) and set(c) == {'program_id', 'field', 'expected_sha256', 'value', 'scope', 'evidence'}, '变更字段不符合规范')
         require(isinstance(c['program_id'], str) and c['program_id'].strip(), '项目ID不能为空')
-        require(c['field'] in FIELDS, '不支持该字段；可执行招生规则必须单独代码评审')
+        require(isinstance(c['field'], str) and c['field'] in FIELDS, '不支持该字段；可执行招生规则必须单独代码评审')
         key = (c['program_id'], c['field'])
         require(key not in seen, '同批重复项目字段')
         seen.add(key)
         require(isinstance(c['expected_sha256'], str) and len(c['expected_sha256']) == 64 and all(x in '0123456789abcdef' for x in c['expected_sha256']), '必须提供旧字段SHA256；空字段也需hash')
         require(c['value'] is not None and c['value'] != '' and c['value'] != [], '不能提交空值')
         require(isinstance(c['scope'], str) and c['scope'].strip(), '适用范围必填')
+        if c['field'] == 'official_name':
+            require(isinstance(c['value'], str) and c['value'].strip(), '专业名称必须为非空文本')
         if c['field'] == 'duration_years':
             require(type(c['value']) in (int, float) and 0 < c['value'] <= 10, '学制必须为0—10之间数字')
         if c['field'] in {'tuition', 'living_cost', 'other_costs'}:
@@ -166,3 +168,4 @@ if __name__ == '__main__':
         main()
     except (ValueError, KeyError, OSError, StopIteration) as exc:
         raise SystemExit('处理未完成：' + str(exc))
+
